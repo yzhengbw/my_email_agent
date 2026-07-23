@@ -3,10 +3,10 @@ from langgraph.types import Command
 from typing import Literal
 from langchain.chat_models import init_chat_model
 
-from email_agent.prompts import agent_system_prompt, default_background, default_response_preferences, default_cal_preferences, AGENT_TOOLS_PROMPT, triage_system_prompt, default_triage_instructions, triage_user_prompt
-from email_agent.schemas import State, StateInput, RouterSchema
-from email_agent.tools.email_tools import write_email, schedule_meeting, check_calendar_availability, Done
-from email_agent.utils import parse_email
+from email_assistant.prompts import agent_system_prompt, default_background, default_response_preferences, default_cal_preferences, AGENT_TOOLS_PROMPT, triage_system_prompt, default_triage_instructions, triage_user_prompt
+from email_assistant.schemas import State, StateInput, RouterSchema
+from email_assistant.tools.email_tools import write_email, schedule_meeting, check_calendar_availability, Done
+from email_assistant.utils import parse_email
 
 from dotenv import load_dotenv
 load_dotenv(".env")
@@ -96,6 +96,10 @@ def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]
     user_prompt = triage_user_prompt.format(
         author=author, to=to, subject=subject, email_thread=email_thread
     )
+
+    print("收到的 state：", state)
+    print("收到的 email_input：", state["email_input"])
+
 
     # Run the router LLM
     result = llm_router.invoke(

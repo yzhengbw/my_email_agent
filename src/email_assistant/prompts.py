@@ -97,8 +97,8 @@ There are also other things that should be known about, but don't require an ema
 - Steam game discounts or other promotional offers
 
 Emails that are worth responding to:
-- Direct questions from administration
-- Job interview reuests or scheduling
+- Direct questions
+- Job interview requests or scheduling
 - Meeting requests or scheduling
 - Questions or arrangements from tutors or professors
 """
