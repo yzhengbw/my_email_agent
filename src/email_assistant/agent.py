@@ -6,13 +6,14 @@ from langchain.chat_models import init_chat_model
 from email_assistant.prompts import agent_system_prompt, default_background, default_response_preferences, default_cal_preferences, AGENT_TOOLS_PROMPT, triage_system_prompt, default_triage_instructions, triage_user_prompt
 from email_assistant.schemas import State, StateInput, RouterSchema
 from email_assistant.tools.email_tools import write_email, schedule_meeting, check_calendar_availability, Done
-from email_assistant.utils import parse_email
+from email_assistant.utils import parse_email, tools_by_name
 
 from dotenv import load_dotenv
 load_dotenv(".env")
 
 # Initializa LLM for agent
 tools = [write_email, schedule_meeting, check_calendar_availability, Done]
+tools_map = tools_by_name(tools)
 llm = init_chat_model("deepseek-v4-flash", temperature=0.0,extra_body={"thinking": {"type": "disabled"}})
 llm_with_tools = llm.bind_tools(tools, tool_choice="any")
 
@@ -28,9 +29,7 @@ def llm_call(state:State):
                         background=default_background,
                         response_preferences=default_response_preferences, 
                         cal_preferences=default_cal_preferences)
-                    },
-                    {"role": "user", "content": f"Respond to the email: {state['email_input']}"}
-                    
+                    }           
                 ]
                 + state["messages"]
             )
@@ -41,7 +40,8 @@ def tool_handler(state:State):
     """Perform the tool call based on the LLM's decision"""
     result = []
     for tool_call in state["messages"][-1].tool_calls:
-        tool = tools[tool_call["name"]]
+        tool_name = tool_call["name"]
+        tool = tools_map[tool_name]
         observation = tool.invoke(tool_call["args"])
         result.append({"role": "tool", "content" : observation, "tool_call_id": tool_call["id"]})
     return {"messages": result}
@@ -118,7 +118,7 @@ def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]
         update = {
             "classification_decision": result.classification,
             "messages": [{"role": "user",
-                            "content": f"Respond to the email: {email_markdown}"
+                            "content": f"Respond to the email: {state['email_input']}"
                         }],
         }
     elif result.classification == "ignore":

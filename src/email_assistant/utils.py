@@ -1,3 +1,5 @@
+from langchain_core.tools import BaseTool
+
 def parse_email(email_input: dict)->tuple:
     """Parse an email input dictionary.
 
@@ -21,3 +23,9 @@ def parse_email(email_input: dict)->tuple:
         email_input["subject"],
         email_input["email_thread"],
     )
+
+def tools_by_name(tools)->dict:
+    return {
+        tool.name: tool
+        for tool in tools
+    }
