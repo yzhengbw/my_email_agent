@@ -9,10 +9,10 @@ def write_email(to: str, subject: str, content: str) -> str:
     return f"Email sent to {to} with subject '{subject}' and content: {content}"
 
 @tool
-def schedule_meeting(attendees: list, duration_minutes: int, scheduled_date: datetime, start_time: datetime) -> str:
+def schedule_meeting(attendees: list, subject: str, duration_minutes: int, preferred_day: datetime, start_time: datetime) -> str:
     """Tool to schedule a meeting."""
     # Placeholder response - in real app would interact with calendar API
-    return f"Meeting scheduled for {scheduled_date} at {start_time} with attendees: {attendees}, lasting {duration_minutes} minutes"
+    return f"Meeting '{subject}' scheduled for {preferred_day} at {start_time} with attendees: {attendees}, lasting {duration_minutes} minutes"
 
 @tool
 def check_calendar_availability(day: datetime) -> str:

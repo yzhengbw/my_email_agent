@@ -1,5 +1,5 @@
 from langgraph.graph import StateGraph, START, END
-from langgraph.types import Command
+from langgraph.types import Command, interrupt
 from typing import Literal
 from langchain.chat_models import init_chat_model
 
@@ -36,13 +36,38 @@ def llm_call(state:State):
         ]
     }
 
+# Tools that take a real-world action, so a human should approve them before they run
+HITL_TOOLS = {"write_email", "schedule_meeting"}
+
 def tool_handler(state:State):
     """Perform the tool call based on the LLM's decision"""
     result = []
     for tool_call in state["messages"][-1].tool_calls:
         tool_name = tool_call["name"]
         tool = tools_map[tool_name]
-        observation = tool.invoke(tool_call["args"])
+
+        if tool_name in HITL_TOOLS:
+            # Pause the graph here and hand the drafted action to a human reviewer
+            human_review = interrupt({
+                "question": f"AI 想要执行 {tool_name}，是否批准？",
+                "tool_name": tool_name,
+                "tool_args": tool_call["args"],
+            })
+            decision = human_review.get("decision")
+
+            if decision == "approve":
+                observation = tool.invoke(tool_call["args"])
+            elif decision == "edit":
+                # Human rewrote some of the arguments (e.g. the email content) before sending
+                observation = tool.invoke(human_review["args"])
+            elif decision == "reject":
+                feedback = human_review.get("feedback", "The human reviewer rejected this action.")
+                observation = f"Action rejected by human reviewer. Feedback: {feedback}"
+            else:
+                observation = "Unrecognized review decision, action skipped."
+        else:
+            observation = tool.invoke(tool_call["args"])
+
         result.append({"role": "tool", "content" : observation, "tool_call_id": tool_call["id"]})
     return {"messages": result}
 
